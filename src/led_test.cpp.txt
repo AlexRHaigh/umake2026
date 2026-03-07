@@ -1,0 +1,138 @@
+// LED Grid Test — 8x8 WS2812 via FastLED
+// To use: rename this file to led_test.cpp and temporarily rename
+// main.cpp, snake_game.cpp, and web_server.cpp to .bak so they don't compile.
+// Flash, test, then rename everything back.
+
+#include <Arduino.h>
+#include <FastLED.h>
+
+#define GRID_W    8
+#define GRID_H    8
+#define NUM_LEDS  (GRID_W * GRID_H)  // 64
+#define LED_PIN   2
+#define BRIGHT    30   // 0-255, keep low on USB power
+
+CRGB leds[NUM_LEDS];
+
+// ── Serpentine pixel index ─────────────────────────────────────────────────
+// Row 0: left→right, row 1: right→left, etc.
+// If your grid isn't serpentine, change to: return y * GRID_W + x
+int pixelIndex(int x, int y) {
+    if (y % 2 == 0)
+        return y * GRID_W + x;
+    else
+        return y * GRID_W + (GRID_W - 1 - x);
+}
+
+void setPixel(int x, int y, CRGB color) {
+    leds[pixelIndex(x, y)] = color;
+}
+
+void clearAll() {
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    FastLED.show();
+}
+
+// ── Test patterns ──────────────────────────────────────────────────────────
+
+// Sweep each row top→bottom
+void testRowSweep(CRGB color, int ms = 120) {
+    clearAll();
+    for (int y = 0; y < GRID_H; y++) {
+        for (int x = 0; x < GRID_W; x++) setPixel(x, y, color);
+        FastLED.show();
+        delay(ms);
+        for (int x = 0; x < GRID_W; x++) setPixel(x, y, CRGB::Black);
+    }
+}
+
+// Sweep each column left→right
+void testColSweep(CRGB color, int ms = 120) {
+    clearAll();
+    for (int x = 0; x < GRID_W; x++) {
+        for (int y = 0; y < GRID_H; y++) setPixel(x, y, color);
+        FastLED.show();
+        delay(ms);
+        for (int y = 0; y < GRID_H; y++) setPixel(x, y, CRGB::Black);
+    }
+}
+
+// Fill every pixel one by one in x/y order — confirms serpentine mapping
+void testFillSequential(CRGB color, int ms = 30) {
+    clearAll();
+    for (int y = 0; y < GRID_H; y++) {
+        for (int x = 0; x < GRID_W; x++) {
+            setPixel(x, y, color);
+            FastLED.show();
+            delay(ms);
+        }
+    }
+    delay(400);
+    clearAll();
+}
+
+// Checkerboard by (x+y) parity, then inverted
+void testCheckerboard(CRGB c1, CRGB c2, int hold = 600) {
+    for (int y = 0; y < GRID_H; y++)
+        for (int x = 0; x < GRID_W; x++)
+            setPixel(x, y, (x + y) % 2 == 0 ? c1 : c2);
+    FastLED.show();
+    delay(hold);
+
+    for (int y = 0; y < GRID_H; y++)
+        for (int x = 0; x < GRID_W; x++)
+            setPixel(x, y, (x + y) % 2 == 0 ? c2 : c1);
+    FastLED.show();
+    delay(hold);
+    clearAll();
+}
+
+// Flash whole grid
+void testFlash(CRGB color, int times = 3, int ms = 150) {
+    for (int i = 0; i < times; i++) {
+        fill_solid(leds, NUM_LEDS, color);
+        FastLED.show();
+        delay(ms);
+        clearAll();
+        delay(ms);
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+
+void setup() {
+    Serial.begin(115200);
+    FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
+    FastLED.setBrightness(BRIGHT);
+    clearAll();
+    delay(500);
+    Serial.println("LED grid test start");
+}
+
+void loop() {
+    Serial.println("Row sweep — red");
+    testRowSweep(CRGB::Red);
+
+    Serial.println("Row sweep — green");
+    testRowSweep(CRGB::Green);
+
+    Serial.println("Row sweep — blue");
+    testRowSweep(CRGB::Blue);
+
+    Serial.println("Column sweep — white");
+    testColSweep(CRGB(150, 150, 150));
+
+    Serial.println("Sequential fill — cyan (confirms serpentine mapping)");
+    testFillSequential(CRGB::Cyan);
+
+    Serial.println("Checkerboard — red/blue");
+    testCheckerboard(CRGB::Red, CRGB::Blue);
+
+    Serial.println("Checkerboard — green/white");
+    testCheckerboard(CRGB::Green, CRGB(120, 120, 120));
+
+    Serial.println("Flash — white x3");
+    testFlash(CRGB(160, 160, 160));
+
+    delay(1000);
+}
