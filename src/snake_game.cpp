@@ -126,6 +126,9 @@ static Point getNextPosition(Direction dir) {
         case LEFT:  next.x--; break;
         case RIGHT: next.x++; break;
     }
+    // Wrap around edges
+    next.x = (next.x + GRID_SIZE) % GRID_SIZE;
+    next.y = (next.y + GRID_SIZE) % GRID_SIZE;
     return next;
 }
 
@@ -205,12 +208,13 @@ static void moveSnake() {
     // Move head to new position
     game.snake[0] = newHead;
 
-    // Update grid and spawn new food if eaten
-    updateGrid();
-
+    // Spawn new food first so updateGrid draws it at the new position,
+    // not at the cell the snake just moved onto.
     if (ateFood) {
         spawnFood();
     }
+
+    updateGrid();
 }
 
 void setDirection(Direction dir) {

@@ -4,7 +4,7 @@
 
 #define LED_PIN   32
 #define NUM_LEDS  (GRID_SIZE * GRID_SIZE)  // 64
-#define BRIGHT    150   // 0-255, safe for USB power
+#define BRIGHT    100   // 0-255, safe for USB power
 
 // Colors
 #define COL_HEAD  CRGB(0,   230, 255)   // bright cyan
@@ -21,10 +21,74 @@ static CRGB leds[NUM_LEDS];
 //   Row-major serpentine (rows, not columns): return (y%2==0) ? y*GRID_SIZE+x : y*GRID_SIZE+(GRID_SIZE-1-x);
 //   Row-major all-forward:                   return y * GRID_SIZE + x;
 static int pixelIndex(int x, int y) {
-    if (x % 2 == 0)
-        return x * GRID_SIZE + y;               // even columns: top → bottom
-    else
-        return x * GRID_SIZE + (GRID_SIZE - 1 - y); // odd columns:  bottom → top
+    // No serpentine. Strip starts at physical bottom-right (game 7,7),
+    // runs right→left along each row, rows go bottom→top.
+    return (GRID_SIZE - 1 - y) * GRID_SIZE + (GRID_SIZE - 1 - x);
+}
+
+// 5-wide × 7-tall pixel font for digits 3, 2, 1 (indices 0, 1, 2).
+// Each byte is one row; bit7=col0 … bit0=col7.
+// Digits occupy cols 2-6, rows 0-6, leaving a 1-pixel margin on all sides.
+static const uint8_t DIGIT_FONT[3][8] = {
+
+    // "3"
+    {0b00111100,
+     0b01111110,
+     0b00000110,
+     0b00111100,
+     0b00000110,
+     0b01111110,
+     0b00111100,
+     0b00000000},
+
+    // "2"
+    {0b00111100,
+     0b01111110,
+     0b00000110,
+     0b00111100,
+     0b01100000,
+     0b01100000,
+     0b01111110,
+     0b00000000},
+
+    // "1"
+    {0b00011000,
+     0b00111000,
+     0b01111000,
+     0b00011000,
+     0b00011000,
+     0b00011000,
+     0b01111110,
+     0b00000000},
+};
+static void showDigit(int digitIdx, CRGB color) {
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    for (int y = 0; y < 8; y++) {
+        uint8_t row = DIGIT_FONT[digitIdx][y];
+        for (int x = 0; x < 8; x++) {
+            if ((row >> (7 - x)) & 1) {
+                leds[pixelIndex(x, y)] = color;
+            }
+        }
+    }
+    FastLED.show();
+}
+
+void showCountdown() {
+    Serial.println("3");
+    showDigit(0, CRGB(200, 0, 0));    // red
+    delay(1000);
+
+    Serial.println("2");
+    showDigit(1, CRGB(200, 100, 0));  // orange
+    delay(1000);
+
+    Serial.println("1");
+    showDigit(2, CRGB(0, 200, 0));    // green
+    delay(1000);
+
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    FastLED.show();
 }
 
 void setupLedDisplay() {

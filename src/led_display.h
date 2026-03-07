@@ -3,5 +3,6 @@
 
 void setupLedDisplay();
 void updateLedDisplay();
+void showCountdown();
 
 #endif
