@@ -13,6 +13,10 @@ bool consumeRestartRequest() {
     return false;
 }
 
+void requestRestart() {
+    g_restartRequested = true;
+}
+
 static void spawnFood();
 static void updateGrid();
 static bool checkWallCollision(Point p);
@@ -378,4 +382,16 @@ void setLCD() {
     lcd.print("Score: ");
     lcd.print(game.score);
     lcd.print("        ");
+}
+
+void initLCD() {
+    lcd.begin(16, 2);
+    lcd.clear();
+}
+
+void setSelectLCD() {
+    lcd.setCursor(0, 0);
+    lcd.print("L:SNAKE R:TETRIS");
+    lcd.setCursor(0, 1);
+    lcd.print("Press L or R    ");
 }

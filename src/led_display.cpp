@@ -1,5 +1,6 @@
 #include "led_display.h"
 #include "snake_game.h"
+#include "tetris_game.h"
 #include <FastLED.h>
 #include <Arduino.h>
 
@@ -199,6 +200,64 @@ void setupLedDisplay() {
     FastLED.show();
 }
 
+void showGameSelectDisplay() {
+    static unsigned long lastUpdate = 0;
+    if (millis() - lastUpdate < 200) return;  // ~5 FPS
+    lastUpdate = millis();
+
+    uint8_t pulse = beatsin8(30, 80, 255);
+    for (int y = 0; y < GRID_H; y++) {
+        for (int x = 0; x < GRID_W; x++) {
+            if (x < 4) {
+                leds[pixelIndex(x, y)] = CRGB(0, pulse, 0);                   // green: snake
+            } else {
+                leds[pixelIndex(x, y)] = CRGB(0, (uint8_t)(pulse * 9 / 10), pulse);  // cyan: tetris
+            }
+        }
+    }
+    FastLED.show();
+}
+
+void updateTetrisDisplay() {
+    static unsigned long lastUpdate = 0;
+    if (millis() - lastUpdate < 33) return;
+    lastUpdate = millis();
+
+    if (isTetrisGameOver()) {
+        static unsigned long lastFlash = 0;
+        static bool flashOn = false;
+        if (millis() - lastFlash > 300) {
+            flashOn = !flashOn;
+            lastFlash = millis();
+        }
+        fill_solid(leds, NUM_LEDS, flashOn ? CRGB(180, 0, 0) : CRGB::Black);
+        FastLED.show();
+        return;
+    }
+
+    static const CRGB PIECE_COLORS[8] = {
+        CRGB::Black,         // 0: empty
+        CRGB(0, 230, 255),   // 1: I - cyan
+        CRGB(230, 200, 0),   // 2: O - yellow
+        CRGB(180, 0, 230),   // 3: T - purple
+        CRGB(0, 200, 50),    // 4: S - green
+        CRGB(230, 0, 0),     // 5: Z - red
+        CRGB(0, 80, 230),    // 6: J - blue
+        CRGB(230, 120, 0),   // 7: L - orange
+    };
+
+    uint8_t grid[GRID_H][GRID_W];
+    getTetrisGridState(grid);
+
+    for (int y = 0; y < GRID_H; y++) {
+        for (int x = 0; x < GRID_W; x++) {
+            uint8_t cell = grid[y][x];
+            leds[pixelIndex(x, y)] = (cell < 8) ? PIECE_COLORS[cell] : CRGB::Black;
+        }
+    }
+    FastLED.show();
+}
+
 void updateLedDisplay() {
     // Rate-limit to ~30 fps — no point refreshing faster than the game moves
     static unsigned long lastUpdate = 0;
@@ -221,6 +280,10 @@ void updateLedDisplay() {
     // beatsin8 produces a sine wave 0-255 at the given BPM — gives food a pulse
     uint8_t foodBrightness = beatsin8(90, 80, 255);
 
+    bool reversed = game.reverseControls;
+    CRGB snakeHead = reversed ? CRGB(220, 0, 220) : COL_HEAD;
+    CRGB snakeBody = reversed ? CRGB(80,  0,  80) : COL_BODY;
+
     uint8_t grid[GRID_H][GRID_W];
     getGridState(grid);
 
@@ -228,8 +291,8 @@ void updateLedDisplay() {
         for (int x = 0; x < GRID_W; x++) {
             CRGB color;
             switch (grid[y][x]) {
-                case SNAKE_HEAD: color = COL_HEAD;                              break;
-                case SNAKE_BODY: color = COL_BODY;                              break;
+                case SNAKE_HEAD: color = snakeHead;                             break;
+                case SNAKE_BODY: color = snakeBody;                             break;
                 case FOOD:       color = CRGB(foodBrightness, 0, 0);           break;
                 case WALL:       color = CRGB(80, 0, 180);                     break;
                 default:         color = COL_EMPTY;                             break;

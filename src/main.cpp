@@ -2,8 +2,14 @@
 #include <WiFi.h>
 #include <esp_now.h>
 #include "snake_game.h"
+#include "tetris_game.h"
 #include "led_display.h"
 #include "web_server.h"
+
+enum GameMode { MODE_SELECT, MODE_SNAKE, MODE_TETRIS };
+
+static volatile GameMode pendingMode = MODE_SELECT;
+static GameMode currentMode = MODE_SELECT;
 
 // ── ESP-NOW ───────────────────────────────────────────────────────────────────
 typedef struct {
@@ -16,10 +22,29 @@ void onEspNowReceive(const uint8_t *mac_addr, const uint8_t *data, int len) {
     memcpy(&msg, data, sizeof(msg));
     Serial.println(msg.button);
 
-    if      (strcmp(msg.button, "UP")    == 0) {Serial.println("UP"); setDirection(UP);}
-    else if (strcmp(msg.button, "DOWN")  == 0) {Serial.println("DOWN"); setDirection(DOWN);}
-    else if (strcmp(msg.button, "LEFT")  == 0) {Serial.println("LEFT"); setDirection(LEFT);}
-    else if (strcmp(msg.button, "RIGHT") == 0) {Serial.println("RIGHT"); setDirection(RIGHT);}
+    Direction dir;
+    bool validDir = true;
+    if      (strcmp(msg.button, "UP")    == 0) dir = UP;
+    else if (strcmp(msg.button, "DOWN")  == 0) dir = DOWN;
+    else if (strcmp(msg.button, "LEFT")  == 0) dir = LEFT;
+    else if (strcmp(msg.button, "RIGHT") == 0) dir = RIGHT;
+    else validDir = false;
+
+    if (!validDir) return;
+
+    switch (currentMode) {
+        case MODE_SELECT:
+            if (dir == LEFT)  pendingMode = MODE_SNAKE;
+            if (dir == RIGHT) pendingMode = MODE_TETRIS;
+            break;
+        case MODE_SNAKE:
+            setDirection(dir);
+            break;
+        case MODE_TETRIS:
+            if (isTetrisGameOver()) requestRestart();
+            else tetrisInput(dir);
+            break;
+    }
 }
 
 void setupEspNow() {
@@ -50,23 +75,63 @@ void setup() {
     Serial.print("MAC Address: ");
     Serial.println(WiFi.macAddress());
     randomSeed(analogRead(0));
-    initGame();
     setupLedDisplay();
     setupWiFiSTA();
     setupWebServer();
+    initLCD();
+    setSelectLCD();
     setupEspNow();
-    Serial.println("Game started!");
+    Serial.println("Select a game: LEFT=Snake, RIGHT=Tetris");
 }
 
 void loop() {
-    if (isGameOver()) {
-        showScrollingScore(getScore());
-        showCountdown();
-        resetGame();
+    // Handle pending mode transitions (set from ESP-NOW callback)
+    if (pendingMode != currentMode) {
+        currentMode = pendingMode;
+        switch (currentMode) {
+            case MODE_SNAKE:
+                initGame();
+                showCountdown();
+                break;
+            case MODE_TETRIS:
+                initTetris();
+                showCountdown();
+                break;
+            case MODE_SELECT:
+                setSelectLCD();
+                break;
+        }
         return;
     }
-    gameLoop();
-    setLCD();
-    updateLedDisplay();
-    handleWebServer();
+
+    switch (currentMode) {
+        case MODE_SELECT:
+            showGameSelectDisplay();
+            handleWebServer();
+            break;
+
+        case MODE_SNAKE:
+            if (isGameOver()) {
+                showScrollingScore(getScore());
+                pendingMode = MODE_SELECT;
+                return;
+            }
+            gameLoop();
+            setLCD();
+            updateLedDisplay();
+            handleWebServer();
+            break;
+
+        case MODE_TETRIS:
+            if (isTetrisGameOver()) {
+                showScrollingScore(getTetrisScore());
+                pendingMode = MODE_SELECT;
+                return;
+            }
+            tetrisLoop();
+            setTetrisLCD();
+            updateTetrisDisplay();
+            handleWebServer();
+            break;
+    }
 }

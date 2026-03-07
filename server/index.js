@@ -394,6 +394,24 @@ const HTML = `<!DOCTYPE html>
             box-shadow: 0 0 4px rgba(124,58,255,0.8);
         }
 
+        /* Mirror Maze — snake turns magenta */
+        #grid.reversed .cell.head {
+            background: #e000e0;
+            box-shadow:
+                0 0 6px #e000e0,
+                0 0 14px rgba(220,0,220,0.5),
+                inset 0 0 4px rgba(255,255,255,0.3);
+            animation: pulse-head-rev 0.45s ease-in-out infinite alternate;
+        }
+        @keyframes pulse-head-rev {
+            from { box-shadow: 0 0 5px #e000e0, 0 0 10px rgba(220,0,220,0.4); }
+            to   { box-shadow: 0 0 10px #e000e0, 0 0 22px rgba(220,0,220,0.6), 0 0 40px rgba(220,0,220,0.2); }
+        }
+        #grid.reversed .cell.body {
+            background: rgba(160, 0, 160, 0.6);
+            box-shadow: 0 0 4px rgba(220,0,220,0.4);
+        }
+
         /* Game Over overlay */
         .over-overlay {
             display: none;
@@ -853,6 +871,9 @@ const HTML = `<!DOCTYPE html>
         }
 
         function updateDisplay(data) {
+            const effects = (data.effects || '').split(',');
+            gridEl.classList.toggle('reversed', effects.includes('REVERSE'));
+
             for (let y = 0; y < 16; y++)
                 for (let x = 0; x < 8; x++)
                     document.getElementById('c' + (y*8+x)).className = 'cell ' + CLS[data.grid[y][x]];

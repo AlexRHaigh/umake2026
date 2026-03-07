@@ -8,5 +8,7 @@ void updateLedDisplay();
 void showCountdown();
 void showCheckmark();
 void showScrollingScore(uint16_t score);
+void showGameSelectDisplay();
+void updateTetrisDisplay();
 
 #endif

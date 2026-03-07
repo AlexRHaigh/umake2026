@@ -56,8 +56,11 @@ void setDirection(Direction dir);
 bool isGameOver();
 uint16_t getScore();
 bool consumeRestartRequest();
+void requestRestart();
 void getGridState(uint8_t grid[GRID_H][GRID_W]);
 void setLCD();
+void initLCD();
+void setSelectLCD();
 void applyEffect(const char* effect);
 void getActiveEffects(char* buf, size_t bufSize);
 
