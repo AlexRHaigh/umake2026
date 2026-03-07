@@ -68,6 +68,31 @@ static void showDigit(int digitIdx, CRGB color) {
     FastLED.show();
 }
 
+void showCheckmark() {
+    // ✓ shape, 2px thick, centered in 8×16 (rows 5–10)
+    // bit7=col0 … bit0=col7
+    static const uint8_t CHECK[6] = {
+        0b00000011,  // row 5: cols 6,7
+        0b00000110,  // row 6: cols 5,6
+        0b00001100,  // row 7: cols 4,5
+        0b10011000,  // row 8: cols 0 + cols 3,4
+        0b11110000,  // row 9: cols 0,1,2,3
+        0b01100000,  // row 10: cols 1,2
+    };
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    for (int y = 0; y < 6; y++) {
+        for (int x = 0; x < GRID_W; x++) {
+            if ((CHECK[y] >> (7 - x)) & 1) {
+                leds[pixelIndex(x, y + 5)] = CRGB(0, 220, 0);
+            }
+        }
+    }
+    FastLED.show();
+    delay(1500);
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    FastLED.show();
+}
+
 void showCountdown() {
     Serial.println("3");
     showDigit(0, CRGB(200, 0, 0));    // red

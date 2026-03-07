@@ -4,5 +4,6 @@
 void setupLedDisplay();
 void updateLedDisplay();
 void showCountdown();
+void showCheckmark();
 
 #endif

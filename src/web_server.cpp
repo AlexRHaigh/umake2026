@@ -42,7 +42,7 @@ static void handleRestart() {
 }
 
 void setupWiFiAP() {
-    WiFi.mode(WIFI_AP);
+    WiFi.mode(WIFI_AP_STA);
     WiFi.softAP(AP_SSID, AP_PASSWORD);
 
     Serial.println();
