@@ -270,7 +270,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             border: 1px solid var(--border);
             border-radius: 4px;
             width: 100%;
-            aspect-ratio: 1;
+            aspect-ratio: 1 / 2;
             backdrop-filter: blur(6px);
         }
 
@@ -426,6 +426,8 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 <div class="coord-y">
                     <span>1</span><span>2</span><span>3</span><span>4</span>
                     <span>5</span><span>6</span><span>7</span><span>8</span>
+                    <span>9</span><span>10</span><span>11</span><span>12</span>
+                    <span>13</span><span>14</span><span>15</span><span>16</span>
                 </div>
                 <div class="bracket tl"></div>
                 <div class="bracket tr"></div>
@@ -490,7 +492,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
         const CLS = ['empty','head','body','food'];
 
-        for (let i = 0; i < 64; i++) {
+        for (let i = 0; i < 128; i++) {
             const d = document.createElement('div');
             d.className = 'cell empty';
             d.id = 'c' + i;
@@ -498,7 +500,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         }
 
         function updateDisplay(data) {
-            for (let y = 0; y < 8; y++)
+            for (let y = 0; y < 16; y++)
                 for (let x = 0; x < 8; x++)
                     document.getElementById('c' + (y*8+x)).className = 'cell ' + CLS[data.grid[y][x]];
 

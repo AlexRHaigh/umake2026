@@ -2,9 +2,9 @@
 #include "snake_game.h"
 #include <FastLED.h>
 
-#define LED_PIN   32
-#define NUM_LEDS  (GRID_SIZE * GRID_SIZE)  // 64
-#define BRIGHT    100   // 0-255, safe for USB power
+#define LED_PIN   23
+#define NUM_LEDS  (GRID_W * GRID_H)  // 128
+#define BRIGHT    75   // 0-255, safe for USB power
 
 // Colors
 #define COL_HEAD  CRGB(0,   230, 255)   // bright cyan
@@ -13,17 +13,10 @@
 
 static CRGB leds[NUM_LEDS];
 
-// Column-major serpentine: the LED strip runs DOWN column 0, UP column 1, etc.
-// This is the standard wiring for most 8x8 WS2812B matrix panels.
-//
-// If movement still looks wrong, try one of these alternatives:
-//   All columns top→bottom (no serpentine):  return x * GRID_SIZE + y;
-//   Row-major serpentine (rows, not columns): return (y%2==0) ? y*GRID_SIZE+x : y*GRID_SIZE+(GRID_SIZE-1-x);
-//   Row-major all-forward:                   return y * GRID_SIZE + x;
+// Row-major, no serpentine. Strip starts at physical bottom-right (game 7,15),
+// runs right→left along each row, rows go bottom→top.
 static int pixelIndex(int x, int y) {
-    // No serpentine. Strip starts at physical bottom-right (game 7,7),
-    // runs right→left along each row, rows go bottom→top.
-    return (GRID_SIZE - 1 - y) * GRID_SIZE + (GRID_SIZE - 1 - x);
+    return (GRID_H - 1 - y) * GRID_W + (GRID_W - 1 - x);
 }
 
 // 5-wide × 7-tall pixel font for digits 3, 2, 1 (indices 0, 1, 2).
@@ -63,11 +56,12 @@ static const uint8_t DIGIT_FONT[3][8] = {
 };
 static void showDigit(int digitIdx, CRGB color) {
     fill_solid(leds, NUM_LEDS, CRGB::Black);
+    const int yOffset = (GRID_H - 8) / 2;  // center 8-row font vertically
     for (int y = 0; y < 8; y++) {
         uint8_t row = DIGIT_FONT[digitIdx][y];
-        for (int x = 0; x < 8; x++) {
+        for (int x = 0; x < GRID_W; x++) {
             if ((row >> (7 - x)) & 1) {
-                leds[pixelIndex(x, y)] = color;
+                leds[pixelIndex(x, y + yOffset)] = color;
             }
         }
     }
@@ -120,11 +114,11 @@ void updateLedDisplay() {
     // beatsin8 produces a sine wave 0-255 at the given BPM — gives food a pulse
     uint8_t foodBrightness = beatsin8(90, 80, 255);
 
-    uint8_t grid[GRID_SIZE][GRID_SIZE];
+    uint8_t grid[GRID_H][GRID_W];
     getGridState(grid);
 
-    for (int y = 0; y < GRID_SIZE; y++) {
-        for (int x = 0; x < GRID_SIZE; x++) {
+    for (int y = 0; y < GRID_H; y++) {
+        for (int x = 0; x < GRID_W; x++) {
             CRGB color;
             switch (grid[y][x]) {
                 case SNAKE_HEAD: color = COL_HEAD;                              break;

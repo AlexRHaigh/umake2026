@@ -12,19 +12,19 @@ static void handleRoot() {
 }
 
 static void handleStatus() {
-    uint8_t grid[GRID_SIZE][GRID_SIZE];
+    uint8_t grid[GRID_H][GRID_W];
     getGridState(grid);
 
     String json = "{\"grid\":[";
 
-    for (int y = 0; y < GRID_SIZE; y++) {
+    for (int y = 0; y < GRID_H; y++) {
         json += "[";
-        for (int x = 0; x < GRID_SIZE; x++) {
+        for (int x = 0; x < GRID_W; x++) {
             json += String(grid[y][x]);
-            if (x < GRID_SIZE - 1) json += ",";
+            if (x < GRID_W - 1) json += ",";
         }
         json += "]";
-        if (y < GRID_SIZE - 1) json += ",";
+        if (y < GRID_H - 1) json += ",";
     }
 
     json += "],\"score\":";

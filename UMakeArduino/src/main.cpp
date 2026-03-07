@@ -9,12 +9,12 @@
 #define DEADZONE_LOW 1500
 #define DEADZONE_HIGH 2600
 
-#define RS 16
-#define E 17
-#define D4 18
-#define D5 19
-#define D6 21
-#define D7 22
+#define RS 22
+#define E 5
+#define D4 17
+#define D5 21
+#define D6 19
+#define D7 18
 
 // LiquidCrystal Setup
 LiquidCrystal lcd(RS, E, D4, D5, D6, D7);

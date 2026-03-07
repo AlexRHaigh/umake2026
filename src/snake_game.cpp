@@ -11,41 +11,44 @@ static Direction calculateBestDirection();
 static bool isValidMove(Direction dir);
 static Point getNextPosition(Direction dir);
 
-#define RS 16
-#define E 17
-#define D4 18
-#define D5 19
-#define D6 21
-#define D7 22
+#define RS 22
+#define E  5
+#define D4 17
+#define D5 21
+#define D6 19
+#define D7 18
 
 LiquidCrystal lcd(RS, E, D4, D5, D6, D7);
 
-int timer = 0;
+static unsigned long gameStartTime = 0;
 
 void initGame() {
     game.snakeLength = 2;
     game.snake[0] = {4, 4};  // Head
     game.snake[1] = {4, 5};  // Body
     game.direction = UP;
+    game.lastMoved = UP;
     game.score = 0;
     game.gameOver = false;
     game.lastMoveTime = millis();
 
     // Clear grid
-    for (int y = 0; y < GRID_SIZE; y++) {
-        for (int x = 0; x < GRID_SIZE; x++) {
+    for (int y = 0; y < GRID_H; y++) {
+        for (int x = 0; x < GRID_W; x++) {
             game.grid[y][x] = EMPTY;
         }
     }
+
+    gameStartTime = millis();
 
     lcd.begin(16, 2);
     lcd.clear();
 
     lcd.setCursor(0,0);
-    lcd.print("Timer: 0 Sec");
+    lcd.print("Timer: 0 Sec    ");
 
     lcd.setCursor(0,1);
-    lcd.print("Score: 0");
+    lcd.print("Score: 0        ");
 
     spawnFood();
     updateGrid();
@@ -63,9 +66,9 @@ uint16_t getScore() {
     return game.score;
 }
 
-void getGridState(uint8_t grid[GRID_SIZE][GRID_SIZE]) {
-    for (int y = 0; y < GRID_SIZE; y++) {
-        for (int x = 0; x < GRID_SIZE; x++) {
+void getGridState(uint8_t grid[GRID_H][GRID_W]) {
+    for (int y = 0; y < GRID_H; y++) {
+        for (int x = 0; x < GRID_W; x++) {
             grid[y][x] = game.grid[y][x];
         }
     }
@@ -74,8 +77,8 @@ void getGridState(uint8_t grid[GRID_SIZE][GRID_SIZE]) {
 static void spawnFood() {
     // Count empty cells
     int emptyCells = 0;
-    for (int y = 0; y < GRID_SIZE; y++) {
-        for (int x = 0; x < GRID_SIZE; x++) {
+    for (int y = 0; y < GRID_H; y++) {
+        for (int x = 0; x < GRID_W; x++) {
             if (game.grid[y][x] == EMPTY) {
                 emptyCells++;
             }
@@ -88,8 +91,8 @@ static void spawnFood() {
     int target = random(emptyCells);
     int count = 0;
 
-    for (int y = 0; y < GRID_SIZE; y++) {
-        for (int x = 0; x < GRID_SIZE; x++) {
+    for (int y = 0; y < GRID_H; y++) {
+        for (int x = 0; x < GRID_W; x++) {
             if (game.grid[y][x] == EMPTY) {
                 if (count == target) {
                     game.food = {(int8_t)x, (int8_t)y};
@@ -104,8 +107,8 @@ static void spawnFood() {
 
 static void updateGrid() {
     // Clear grid
-    for (int y = 0; y < GRID_SIZE; y++) {
-        for (int x = 0; x < GRID_SIZE; x++) {
+    for (int y = 0; y < GRID_H; y++) {
+        for (int x = 0; x < GRID_W; x++) {
             game.grid[y][x] = EMPTY;
         }
     }
@@ -113,20 +116,20 @@ static void updateGrid() {
     // Place snake
     for (int i = 0; i < game.snakeLength; i++) {
         Point p = game.snake[i];
-        if (p.x >= 0 && p.x < GRID_SIZE && p.y >= 0 && p.y < GRID_SIZE) {
+        if (p.x >= 0 && p.x < GRID_W && p.y >= 0 && p.y < GRID_H) {
             game.grid[p.y][p.x] = (i == 0) ? SNAKE_HEAD : SNAKE_BODY;
         }
     }
 
     // Place food
-    if (game.food.x >= 0 && game.food.x < GRID_SIZE &&
-        game.food.y >= 0 && game.food.y < GRID_SIZE) {
+    if (game.food.x >= 0 && game.food.x < GRID_W &&
+        game.food.y >= 0 && game.food.y < GRID_H) {
         game.grid[game.food.y][game.food.x] = FOOD;
     }
 }
 
 static bool checkWallCollision(Point p) {
-    return p.x < 0 || p.x >= GRID_SIZE || p.y < 0 || p.y >= GRID_SIZE;
+    return p.x < 0 || p.x >= GRID_W || p.y < 0 || p.y >= GRID_H;
 }
 
 static bool checkSelfCollision(Point p) {
@@ -148,8 +151,8 @@ static Point getNextPosition(Direction dir) {
         case RIGHT: next.x++; break;
     }
     // Wrap around edges
-    next.x = (next.x + GRID_SIZE) % GRID_SIZE;
-    next.y = (next.y + GRID_SIZE) % GRID_SIZE;
+    next.x = (next.x + GRID_W) % GRID_W;
+    next.y = (next.y + GRID_H) % GRID_H;
     return next;
 }
 
@@ -198,6 +201,7 @@ static Direction calculateBestDirection() {
 }
 
 static void moveSnake() {
+    game.lastMoved = game.direction;
     Point newHead = getNextPosition(game.direction);
 
     // Check collisions
@@ -239,17 +243,17 @@ static void moveSnake() {
 }
 
 void setDirection(Direction dir) {
-    // Prevent 180-degree reversal
-    if (dir == UP    && game.direction == DOWN)  return;
-    if (dir == DOWN  && game.direction == UP)    return;
-    if (dir == LEFT  && game.direction == RIGHT) return;
-    if (dir == RIGHT && game.direction == LEFT)  return;
+    // Check against lastMoved (not queued direction) to prevent chained
+    // inputs within one tick from sneaking in a 180-degree reversal.
+    if (dir == UP    && game.lastMoved == DOWN)  return;
+    if (dir == DOWN  && game.lastMoved == UP)    return;
+    if (dir == LEFT  && game.lastMoved == RIGHT) return;
+    if (dir == RIGHT && game.lastMoved == LEFT)  return;
     game.direction = dir;
 }
 
 void gameLoop() {
     if (game.gameOver) return;
-    timer++;
     unsigned long currentTime = millis();
 
     if (currentTime - game.lastMoveTime >= GAME_SPEED_MS) {
@@ -259,13 +263,15 @@ void gameLoop() {
 }
 
 void setLCD() {
-  lcd.setCursor(0,0);
-  lcd.print("Timer: ");
-  lcd.print(timer);
-  lcd.print(" Sec        ");
+    unsigned long elapsedSec = (millis() - gameStartTime) / 1000;
 
-  lcd.setCursor(0,1);
-  lcd.print("Score: ");
-  lcd.print(game.score);
-  lcd.print("         ");
+    lcd.setCursor(0, 0);
+    lcd.print("Timer: ");
+    lcd.print(elapsedSec);
+    lcd.print(" Sec    ");
+
+    lcd.setCursor(0, 1);
+    lcd.print("Score: ");
+    lcd.print(game.score);
+    lcd.print("        ");
 }

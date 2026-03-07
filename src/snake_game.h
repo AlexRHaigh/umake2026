@@ -3,8 +3,9 @@
 
 #include <Arduino.h>
 
-#define GRID_SIZE 8
-#define MAX_SNAKE_LENGTH 64
+#define GRID_W 8
+#define GRID_H 16
+#define MAX_SNAKE_LENGTH 128
 #define GAME_SPEED_MS 500
 
 enum CellState {
@@ -27,10 +28,11 @@ struct Point {
 };
 
 struct GameState {
-    uint8_t grid[GRID_SIZE][GRID_SIZE];
+    uint8_t grid[GRID_H][GRID_W];
     Point snake[MAX_SNAKE_LENGTH];
     uint8_t snakeLength;
     Direction direction;
+    Direction lastMoved;   // direction the snake actually moved last tick
     Point food;
     uint16_t score;
     bool gameOver;
@@ -45,7 +47,7 @@ void resetGame();
 void setDirection(Direction dir);
 bool isGameOver();
 uint16_t getScore();
-void getGridState(uint8_t grid[GRID_SIZE][GRID_SIZE]);
+void getGridState(uint8_t grid[GRID_H][GRID_W]);
 void setLCD();
 
 #endif
