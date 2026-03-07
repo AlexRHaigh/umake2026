@@ -64,6 +64,7 @@ void loop() {
     }
     readJoystick();
     gameLoop();
+    setLCD();
     updateLedDisplay();
 }
 

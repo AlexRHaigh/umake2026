@@ -1,4 +1,5 @@
 #include "snake_game.h"
+#include <LiquidCrystal.h>
 
 GameState game;
 
@@ -9,6 +10,17 @@ static bool checkSelfCollision(Point p);
 static Direction calculateBestDirection();
 static bool isValidMove(Direction dir);
 static Point getNextPosition(Direction dir);
+
+#define RS 16
+#define E 17
+#define D4 18
+#define D5 19
+#define D6 21
+#define D7 22
+
+LiquidCrystal lcd(RS, E, D4, D5, D6, D7);
+
+int timer = 0;
 
 void initGame() {
     game.snakeLength = 2;
@@ -25,6 +37,15 @@ void initGame() {
             game.grid[y][x] = EMPTY;
         }
     }
+
+    lcd.begin(16, 2);
+    lcd.clear();
+
+    lcd.setCursor(0,0);
+    lcd.print("Timer: 0 Sec");
+
+    lcd.setCursor(0,1);
+    lcd.print("Score: 0");
 
     spawnFood();
     updateGrid();
@@ -228,11 +249,23 @@ void setDirection(Direction dir) {
 
 void gameLoop() {
     if (game.gameOver) return;
-
+    timer++;
     unsigned long currentTime = millis();
 
     if (currentTime - game.lastMoveTime >= GAME_SPEED_MS) {
         game.lastMoveTime = currentTime;
         moveSnake();
     }
+}
+
+void setLCD() {
+  lcd.setCursor(0,0);
+  lcd.print("Timer: ");
+  lcd.print(timer);
+  lcd.print(" Sec        ");
+
+  lcd.setCursor(0,1);
+  lcd.print("Score: ");
+  lcd.print(game.score);
+  lcd.print("         ");
 }

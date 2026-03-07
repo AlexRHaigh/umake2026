@@ -46,5 +46,6 @@ void setDirection(Direction dir);
 bool isGameOver();
 uint16_t getScore();
 void getGridState(uint8_t grid[GRID_SIZE][GRID_SIZE]);
+void setLCD();
 
 #endif
