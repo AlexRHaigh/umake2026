@@ -338,9 +338,12 @@ void applyEffect(const char* effect) {
         game.wallsUntil = millis() + 10000;
         drawWalls();
     } else if (strcmp(effect, "SHRINK") == 0) {
-        if (game.snakeLength > 1) {
-            game.snakeLength = max((int)(game.snakeLength / 2), 1);
+        int newLength = min((int)game.snakeLength + 4, MAX_SNAKE_LENGTH);
+        // Duplicate the tail segment to extend
+        for (int i = game.snakeLength; i < newLength; i++) {
+            game.snake[i] = game.snake[game.snakeLength - 1];
         }
+        game.snakeLength = newLength;
         updateGrid();
     }
 }

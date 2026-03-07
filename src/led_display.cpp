@@ -281,8 +281,9 @@ void updateLedDisplay() {
     uint8_t foodBrightness = beatsin8(90, 80, 255);
 
     bool reversed = game.reverseControls;
-    CRGB snakeHead = reversed ? CRGB(220, 0, 220) : COL_HEAD;
-    CRGB snakeBody = reversed ? CRGB(80,  0,  80) : COL_BODY;
+    bool spedup = game.speedUp;
+    CRGB snakeHead = reversed ? CRGB(220, 0, 220) : spedup ? CRGB(255, 220, 0) : COL_HEAD;
+    CRGB snakeBody = reversed ? CRGB(80,  0,  80) : spedup ? CRGB(100, 80,  0) : COL_BODY;
 
     uint8_t grid[GRID_H][GRID_W];
     getGridState(grid);

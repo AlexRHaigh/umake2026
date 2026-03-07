@@ -10,7 +10,7 @@ const EFFECT_LABELS = {
   SPEED_UP: "OVERCLOCK",
   REVERSE:  "MIRROR MAZE",
   WALLS:    "SECTOR BLOCK",
-  SHRINK:   "NEURAL DECAY",
+  SHRINK:   "GROW",
 };
 let voteState = { phase: "idle", options: [], votes: [0, 0], timeLeft: 0, winner: null };
 
@@ -766,7 +766,7 @@ const HTML = `<!DOCTYPE html>
 
         const EFFECT_LABELS = {
           SPEED_UP: 'OVERCLOCK', REVERSE: 'MIRROR MAZE',
-          WALLS: 'SECTOR BLOCK', SHRINK: 'NEURAL DECAY'
+          WALLS: 'SECTOR BLOCK', SHRINK: 'GROW'
         };
 
         let lastVoteOptions = null;
