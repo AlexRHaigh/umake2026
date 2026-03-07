@@ -1,15 +1,11 @@
 #include "web_server.h"
-#include "web_page.h"
 #include "snake_game.h"
+#include <esp_wifi.h>
 
 #include <WiFi.h>
 #include <WebServer.h>
 
 WebServer server(80);
-
-static void handleRoot() {
-    server.send_P(200, "text/html", INDEX_HTML);
-}
 
 static void handleStatus() {
     uint8_t grid[GRID_H][GRID_W];
@@ -41,22 +37,24 @@ static void handleRestart() {
     server.send(200, "application/json", "{\"success\":true}");
 }
 
-void setupWiFiAP() {
-    WiFi.mode(WIFI_AP_STA);
-    WiFi.softAP(AP_SSID, AP_PASSWORD);
+void setupWiFiSTA() {
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(STA_SSID, STA_PASSWORD);
 
+    Serial.print("Connecting to ");
+    Serial.print(STA_SSID);
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+    }
     Serial.println();
-    Serial.println("Access Point Started");
-    Serial.print("SSID: ");
-    Serial.println(AP_SSID);
-    Serial.print("Password: ");
-    Serial.println(AP_PASSWORD);
+    Serial.println("WiFi connected");
+    esp_wifi_set_ps(WIFI_PS_NONE);
     Serial.print("IP Address: ");
-    Serial.println(WiFi.softAPIP());
+    Serial.println(WiFi.localIP());
 }
 
 void setupWebServer() {
-    server.on("/", HTTP_GET, handleRoot);
     server.on("/status", HTTP_GET, handleStatus);
     server.on("/restart", HTTP_POST, handleRestart);
 

@@ -27,12 +27,14 @@ void setupEspNow() {
         Serial.println("ESP-NOW init failed");
         return;
     }
+    Serial.print("WiFi channel: ");
+    Serial.println(WiFi.channel());
 
     esp_now_peer_info_t peer = {};
     uint8_t controllerMac[] = {0x70, 0x4B, 0xCA, 0x8F, 0x01, 0x94};
     memcpy(peer.peer_addr, controllerMac, 6);
-    peer.channel = 1;
-    peer.ifidx   = WIFI_IF_AP;
+    peer.channel = 0;
+    peer.ifidx   = WIFI_IF_STA;
     peer.encrypt = false;
     esp_now_add_peer(&peer);
 
@@ -50,7 +52,7 @@ void setup() {
     randomSeed(analogRead(0));
     initGame();
     setupLedDisplay();
-    setupWiFiAP();
+    setupWiFiSTA();
     setupWebServer();
     setupEspNow();
     Serial.println("Game started!");

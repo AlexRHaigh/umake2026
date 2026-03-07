@@ -142,7 +142,7 @@ static const uint8_t* getScoreChar(char c) {
 
 void showScrollingScore(uint16_t score) {
     char msg[18];
-    snprintf(msg, sizeof(msg), "SCORE%u", score);
+    snprintf(msg, sizeof(msg), "SCORE %u", score);
     int msgLen = strlen(msg);
 
     const int CHAR_W  = 6;          // 5px glyph + 1px gap
