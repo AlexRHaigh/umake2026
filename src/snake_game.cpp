@@ -3,6 +3,16 @@
 
 GameState game;
 
+static volatile bool g_restartRequested = false;
+
+bool consumeRestartRequest() {
+    if (g_restartRequested) {
+        g_restartRequested = false;
+        return true;
+    }
+    return false;
+}
+
 static void spawnFood();
 static void updateGrid();
 static bool checkWallCollision(Point p);
@@ -243,6 +253,10 @@ static void moveSnake() {
 }
 
 void setDirection(Direction dir) {
+    if (game.gameOver) {
+        if (dir == UP) g_restartRequested = true;
+        return;
+    }
     // Check against lastMoved (not queued direction) to prevent chained
     // inputs within one tick from sneaking in a 180-degree reversal.
     if (dir == UP    && game.lastMoved == DOWN)  return;

@@ -47,6 +47,7 @@ void resetGame();
 void setDirection(Direction dir);
 bool isGameOver();
 uint16_t getScore();
+bool consumeRestartRequest();
 void getGridState(uint8_t grid[GRID_H][GRID_W]);
 void setLCD();
 

@@ -1,10 +1,11 @@
 #include "led_display.h"
 #include "snake_game.h"
 #include <FastLED.h>
+#include <Arduino.h>
 
 #define LED_PIN   23
 #define NUM_LEDS  (GRID_W * GRID_H)  // 128
-#define BRIGHT    75   // 0-255, safe for USB power
+#define BRIGHT    50   // 0-255, safe for USB power
 
 // Colors
 #define COL_HEAD  CRGB(0,   230, 255)   // bright cyan
@@ -109,6 +110,75 @@ void showCountdown() {
     fill_solid(leds, NUM_LEDS, CRGB::Black);
     FastLED.show();
 }
+
+// ── Scrolling score display ───────────────────────────────────────────────────
+// 5×7 pixel font. Row-based: bit7=col0 (leftmost), ..., bit3=col4 (rightmost).
+static const struct { char c; uint8_t rows[7]; } SCORE_FONT[] = {
+    {'S', {0x70, 0x88, 0x80, 0x70, 0x08, 0x88, 0x70}},
+    {'C', {0x70, 0x88, 0x80, 0x80, 0x80, 0x88, 0x70}},
+    {'O', {0x70, 0x88, 0x88, 0x88, 0x88, 0x88, 0x70}},
+    {'R', {0xF0, 0x88, 0x88, 0xF0, 0xA0, 0x90, 0x88}},
+    {'E', {0xF8, 0x80, 0x80, 0xF0, 0x80, 0x80, 0xF8}},
+    {' ', {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
+    {'0', {0x70, 0x88, 0x88, 0x88, 0x88, 0x88, 0x70}},
+    {'1', {0x20, 0x60, 0x20, 0x20, 0x20, 0x20, 0x70}},
+    {'2', {0x70, 0x88, 0x08, 0x10, 0x20, 0x40, 0xF8}},
+    {'3', {0x70, 0x88, 0x08, 0x30, 0x08, 0x88, 0x70}},
+    {'4', {0x10, 0x30, 0x50, 0x90, 0xF8, 0x10, 0x10}},
+    {'5', {0xF8, 0x80, 0xF0, 0x08, 0x08, 0x88, 0x70}},
+    {'6', {0x70, 0x80, 0x80, 0xF0, 0x88, 0x88, 0x70}},
+    {'7', {0xF8, 0x08, 0x10, 0x20, 0x20, 0x20, 0x20}},
+    {'8', {0x70, 0x88, 0x88, 0x70, 0x88, 0x88, 0x70}},
+    {'9', {0x70, 0x88, 0x88, 0x78, 0x08, 0x88, 0x70}},
+};
+static const int SCORE_FONT_SIZE = sizeof(SCORE_FONT) / sizeof(SCORE_FONT[0]);
+
+static const uint8_t* getScoreChar(char c) {
+    for (int i = 0; i < SCORE_FONT_SIZE; i++) {
+        if (SCORE_FONT[i].c == c) return SCORE_FONT[i].rows;
+    }
+    return SCORE_FONT[5].rows;  // space for unknown
+}
+
+void showScrollingScore(uint16_t score) {
+    char msg[18];
+    snprintf(msg, sizeof(msg), "SCORE%u", score);
+    int msgLen = strlen(msg);
+
+    const int CHAR_W  = 6;          // 5px glyph + 1px gap
+    const int totalW  = msgLen * CHAR_W;
+    const int yOffset = (GRID_H - 7) / 2;   // center 7-row font in 16 rows
+
+    // Scroll right-to-left; loops until ESP-NOW UP is received
+    while (true) {
+        for (int offset = 0; offset <= GRID_W + totalW; offset++) {
+            if (consumeRestartRequest()) return;
+
+            fill_solid(leds, NUM_LEDS, CRGB::Black);
+
+            for (int displayCol = 0; displayCol < GRID_W; displayCol++) {
+                // Which pixel column of the message bitmap falls on this display column?
+                int msgPixel = displayCol - (GRID_W - offset);
+                if (msgPixel < 0 || msgPixel >= totalW) continue;
+
+                int charIdx = msgPixel / CHAR_W;
+                int charCol = msgPixel % CHAR_W;
+                if (charCol >= 5) continue;  // 1px gap between characters
+
+                const uint8_t* charRows = getScoreChar(msg[charIdx]);
+                for (int row = 0; row < 7; row++) {
+                    if ((charRows[row] >> (7 - charCol)) & 1) {
+                        leds[pixelIndex(displayCol, row + yOffset)] = CRGB(255, 140, 0);
+                    }
+                }
+            }
+
+            FastLED.show();
+            delay(70);  // ~14 pixels/sec scroll speed
+        }
+    }
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 void setupLedDisplay() {
     FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);

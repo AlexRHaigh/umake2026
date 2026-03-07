@@ -8,8 +8,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VIPER-1 // LIVE FEED</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
     <style>
         :root {
             --void:       #020509;
@@ -29,7 +28,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         body {
             background: var(--void);
             color: var(--cyan);
-            font-family: 'Orbitron', 'Courier New', monospace;
+            font-family: 'Courier New', monospace;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -92,7 +91,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         .title-block { text-align: center; }
 
         .title-eyebrow {
-            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            font-family: 'Courier New', monospace;
             font-size: 9px;
             letter-spacing: 5px;
             color: var(--muted);
@@ -114,7 +113,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         }
 
         .title-sub {
-            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            font-family: 'Courier New', monospace;
             font-size: 9px;
             letter-spacing: 3px;
             color: rgba(124,58,255,0.75);
@@ -157,7 +156,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         }
 
         .hud-label {
-            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            font-family: 'Courier New', monospace;
             font-size: 8px;
             letter-spacing: 2px;
             color: var(--muted);
@@ -209,7 +208,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         }
 
         .sector-label {
-            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            font-family: 'Courier New', monospace;
             font-size: 8px;
             letter-spacing: 4px;
             color: var(--muted);
@@ -242,7 +241,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
         /* Coord labels */
         .coord-x, .coord-y {
-            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            font-family: 'Courier New', monospace;
             font-size: 7px;
             color: rgba(0,229,255,0.2);
             display: flex;
@@ -338,7 +337,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             48%, 52% { opacity: 0.82; }
         }
         .over-sub {
-            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            font-family: 'Courier New', monospace;
             font-size: 9px;
             letter-spacing: 4px;
             color: rgba(255,43,94,0.55);
@@ -348,7 +347,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         #restart {
             display: none;
             padding: 10px 28px;
-            font-family: 'Orbitron', 'Courier New', monospace;
+            font-family: 'Courier New', monospace;
             font-size: 10px;
             font-weight: 700;
             letter-spacing: 4px;
@@ -380,7 +379,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
         /* ── FOOTER ── */
         .footer-line {
-            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            font-family: 'Courier New', monospace;
             font-size: 8px;
             letter-spacing: 3px;
             color: rgba(0,229,255,0.18);
