@@ -27,6 +27,13 @@ static void handleStatus() {
     json += String(getScore());
     json += ",\"gameOver\":";
     json += isGameOver() ? "true" : "false";
+
+    char effectsBuf[64];
+    getActiveEffects(effectsBuf, sizeof(effectsBuf));
+    json += ",\"effects\":\"";
+    json += effectsBuf;
+    json += "\"";
+
     json += "}";
 
     server.send(200, "application/json", json);
@@ -34,6 +41,12 @@ static void handleStatus() {
 
 static void handleRestart() {
     resetGame();
+    server.send(200, "application/json", "{\"success\":true}");
+}
+
+static void handleEffect() {
+    String body = server.arg("plain");
+    applyEffect(body.c_str());
     server.send(200, "application/json", "{\"success\":true}");
 }
 
@@ -57,6 +70,7 @@ void setupWiFiSTA() {
 void setupWebServer() {
     server.on("/status", HTTP_GET, handleStatus);
     server.on("/restart", HTTP_POST, handleRestart);
+    server.on("/effect", HTTP_POST, handleEffect);
 
     server.begin();
     Serial.println("Web server started on port 80");

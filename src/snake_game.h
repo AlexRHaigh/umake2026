@@ -12,7 +12,8 @@ enum CellState {
     EMPTY = 0,
     SNAKE_HEAD = 1,
     SNAKE_BODY = 2,
-    FOOD = 3
+    FOOD = 3,
+    WALL = 4
 };
 
 enum Direction {
@@ -37,6 +38,13 @@ struct GameState {
     uint16_t score;
     bool gameOver;
     unsigned long lastMoveTime;
+
+    bool reverseControls;
+    unsigned long reverseUntil;
+    bool speedUp;
+    unsigned long speedUpUntil;
+    bool wallsActive;
+    unsigned long wallsUntil;
 };
 
 extern GameState game;
@@ -50,5 +58,7 @@ uint16_t getScore();
 bool consumeRestartRequest();
 void getGridState(uint8_t grid[GRID_H][GRID_W]);
 void setLCD();
+void applyEffect(const char* effect);
+void getActiveEffects(char* buf, size_t bufSize);
 
 #endif

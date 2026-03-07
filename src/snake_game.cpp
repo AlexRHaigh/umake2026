@@ -42,6 +42,13 @@ void initGame() {
     game.gameOver = false;
     game.lastMoveTime = millis();
 
+    game.reverseControls = false;
+    game.reverseUntil = 0;
+    game.speedUp = false;
+    game.speedUpUntil = 0;
+    game.wallsActive = false;
+    game.wallsUntil = 0;
+
     // Clear grid
     for (int y = 0; y < GRID_H; y++) {
         for (int x = 0; x < GRID_W; x++) {
@@ -115,6 +122,13 @@ static void spawnFood() {
     }
 }
 
+static void drawWalls() {
+    // y=5: x=0..6 (gap at x=7)
+    for (int x = 0; x <= 6; x++) game.grid[5][x] = WALL;
+    // y=10: x=1..7 (gap at x=0)
+    for (int x = 1; x <= 7; x++) game.grid[10][x] = WALL;
+}
+
 static void updateGrid() {
     // Clear grid
     for (int y = 0; y < GRID_H; y++) {
@@ -136,6 +150,9 @@ static void updateGrid() {
         game.food.y >= 0 && game.food.y < GRID_H) {
         game.grid[game.food.y][game.food.x] = FOOD;
     }
+
+    // Re-draw walls on top so they persist
+    if (game.wallsActive) drawWalls();
 }
 
 static bool checkWallCollision(Point p) {
@@ -171,6 +188,10 @@ static bool isValidMove(Direction dir) {
 
     // Check wall collision
     if (checkWallCollision(next)) return false;
+
+    // Check WALL cell collision
+    if (next.x >= 0 && next.x < GRID_W && next.y >= 0 && next.y < GRID_H &&
+        game.grid[next.y][next.x] == WALL) return false;
 
     // Check self collision (excluding tail which will move)
     for (int i = 1; i < game.snakeLength - 1; i++) {
@@ -214,8 +235,11 @@ static void moveSnake() {
     game.lastMoved = game.direction;
     Point newHead = getNextPosition(game.direction);
 
-    // Check collisions
-    if (checkWallCollision(newHead) || checkSelfCollision(newHead)) {
+    // Check collisions (wall cells count as fatal)
+    bool hitWallCell = (newHead.x >= 0 && newHead.x < GRID_W &&
+                        newHead.y >= 0 && newHead.y < GRID_H &&
+                        game.grid[newHead.y][newHead.x] == WALL);
+    if (checkWallCollision(newHead) || checkSelfCollision(newHead) || hitWallCell) {
         game.gameOver = true;
         return;
     }
@@ -257,6 +281,15 @@ void setDirection(Direction dir) {
         if (dir == UP) g_restartRequested = true;
         return;
     }
+
+    // Flip controls if REVERSE effect is active
+    if (game.reverseControls) {
+        if      (dir == UP)    dir = DOWN;
+        else if (dir == DOWN)  dir = UP;
+        else if (dir == LEFT)  dir = RIGHT;
+        else if (dir == RIGHT) dir = LEFT;
+    }
+
     // Check against lastMoved (not queued direction) to prevent chained
     // inputs within one tick from sneaking in a 180-degree reversal.
     if (dir == UP    && game.lastMoved == DOWN)  return;
@@ -270,9 +303,66 @@ void gameLoop() {
     if (game.gameOver) return;
     unsigned long currentTime = millis();
 
-    if (currentTime - game.lastMoveTime >= GAME_SPEED_MS) {
+    // Expire effects
+    if (game.speedUp && currentTime >= game.speedUpUntil) {
+        game.speedUp = false;
+    }
+    if (game.reverseControls && currentTime >= game.reverseUntil) {
+        game.reverseControls = false;
+    }
+    if (game.wallsActive && currentTime >= game.wallsUntil) {
+        game.wallsActive = false;
+        updateGrid(); // redraw without walls
+    }
+
+    unsigned long tickInterval = game.speedUp ? 250 : GAME_SPEED_MS;
+    if (currentTime - game.lastMoveTime >= tickInterval) {
         game.lastMoveTime = currentTime;
         moveSnake();
+    }
+}
+
+void applyEffect(const char* effect) {
+    if (strcmp(effect, "SPEED_UP") == 0) {
+        game.speedUp = true;
+        game.speedUpUntil = millis() + 10000;
+    } else if (strcmp(effect, "REVERSE") == 0) {
+        game.reverseControls = true;
+        game.reverseUntil = millis() + 5000;
+    } else if (strcmp(effect, "WALLS") == 0) {
+        game.wallsActive = true;
+        game.wallsUntil = millis() + 10000;
+        drawWalls();
+    } else if (strcmp(effect, "SHRINK") == 0) {
+        if (game.snakeLength > 1) {
+            game.snakeLength = max((int)(game.snakeLength / 2), 1);
+        }
+        updateGrid();
+    }
+}
+
+void getActiveEffects(char* buf, size_t bufSize) {
+    buf[0] = '\0';
+    unsigned long now = millis();
+    bool first = true;
+
+    auto append = [&](const char* id) {
+        if (!first) strncat(buf, ",", bufSize - strlen(buf) - 1);
+        strncat(buf, id, bufSize - strlen(buf) - 1);
+        first = false;
+    };
+
+    if (game.speedUp) {
+        if (now < game.speedUpUntil) append("SPEED_UP");
+        else game.speedUp = false;
+    }
+    if (game.reverseControls) {
+        if (now < game.reverseUntil) append("REVERSE");
+        else game.reverseControls = false;
+    }
+    if (game.wallsActive) {
+        if (now < game.wallsUntil) append("WALLS");
+        else game.wallsActive = false;
     }
 }
 

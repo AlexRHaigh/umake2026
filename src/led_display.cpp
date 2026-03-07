@@ -140,13 +140,22 @@ static const uint8_t* getScoreChar(char c) {
     return SCORE_FONT[5].rows;  // space for unknown
 }
 
+static int getCharWidth(char c) { return c == ' ' ? 3 : 6; }  // space is 3px, others 5px glyph + 1px gap
+
 void showScrollingScore(uint16_t score) {
     char msg[18];
     snprintf(msg, sizeof(msg), "SCORE %u", score);
     int msgLen = strlen(msg);
 
-    const int CHAR_W  = 6;          // 5px glyph + 1px gap
-    const int totalW  = msgLen * CHAR_W;
+    // Pre-compute per-character pixel start positions
+    int charStart[19];
+    int totalW = 0;
+    for (int i = 0; i < msgLen; i++) {
+        charStart[i] = totalW;
+        totalW += getCharWidth(msg[i]);
+    }
+    charStart[msgLen] = totalW;  // sentinel
+
     const int yOffset = (GRID_H - 7) / 2;   // center 7-row font in 16 rows
 
     // Scroll right-to-left; loops until ESP-NOW UP is received
@@ -157,15 +166,18 @@ void showScrollingScore(uint16_t score) {
             fill_solid(leds, NUM_LEDS, CRGB::Black);
 
             for (int displayCol = 0; displayCol < GRID_W; displayCol++) {
-                // Which pixel column of the message bitmap falls on this display column?
                 int msgPixel = displayCol - (GRID_W - offset);
                 if (msgPixel < 0 || msgPixel >= totalW) continue;
 
-                int charIdx = msgPixel / CHAR_W;
-                int charCol = msgPixel % CHAR_W;
-                if (charCol >= 5) continue;  // 1px gap between characters
+                // Find which character this pixel belongs to
+                int ci = 0;
+                while (ci < msgLen - 1 && charStart[ci + 1] <= msgPixel) ci++;
 
-                const uint8_t* charRows = getScoreChar(msg[charIdx]);
+                int charCol = msgPixel - charStart[ci];
+                if (msg[ci] == ' ') continue;   // space is blank
+                if (charCol >= 5) continue;      // 1px gap after glyph
+
+                const uint8_t* charRows = getScoreChar(msg[ci]);
                 for (int row = 0; row < 7; row++) {
                     if ((charRows[row] >> (7 - charCol)) & 1) {
                         leds[pixelIndex(displayCol, row + yOffset)] = CRGB(255, 140, 0);
@@ -219,6 +231,7 @@ void updateLedDisplay() {
                 case SNAKE_HEAD: color = COL_HEAD;                              break;
                 case SNAKE_BODY: color = COL_BODY;                              break;
                 case FOOD:       color = CRGB(foodBrightness, 0, 0);           break;
+                case WALL:       color = CRGB(80, 0, 180);                     break;
                 default:         color = COL_EMPTY;                             break;
             }
             leds[pixelIndex(x, y)] = color;
