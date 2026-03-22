@@ -56,7 +56,7 @@ void setupEspNow() {
     Serial.println(WiFi.channel());
 
     esp_now_peer_info_t peer = {};
-    uint8_t controllerMac[] = {0x70, 0x4B, 0xCA, 0x8F, 0x01, 0x94};
+    uint8_t controllerMac[] = {0x70, 0x4B, 0xCA, 0x8E, 0x9F, 0x48};
     memcpy(peer.peer_addr, controllerMac, 6);
     peer.channel = 0;
     peer.ifidx   = WIFI_IF_STA;
