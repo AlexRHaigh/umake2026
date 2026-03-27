@@ -3,10 +3,10 @@
 
 #include <Arduino.h>
 
-#define STA_SSID "SnakeGame"
-#define STA_PASSWORD "robot123"
+#define AP_SSID "SnakeGame"
+#define AP_PASSWORD "robot123"
 
-void setupWiFiSTA();
+void setupWiFiAP();
 void setupWebServer();
 void handleWebServer();
 
